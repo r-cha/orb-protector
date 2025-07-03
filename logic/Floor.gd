@@ -1,3 +1,6 @@
+"""
+Floor detects when balls exit the game area and handles ball cleanup.
+"""
 extends Area2D
 
 func _ready():

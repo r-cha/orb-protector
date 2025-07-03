@@ -1,3 +1,6 @@
+"""
+Wall represents static boundaries that balls bounce off of.
+"""
 extends StaticBody2D
 
 func _ready():

@@ -1,3 +1,7 @@
+"""
+Ball represents a physics-based ball that bounces around the game field.
+Handles collision detection, velocity management, and interaction with bricks.
+"""
 extends RigidBody2D
 class_name Ball
 
@@ -8,10 +12,10 @@ signal ball_exited(exit_position)
 # Speed multiplier for fine-tuning
 @export var speed_multiplier = 1.5
 # Ball count speed scaling
-var ball_count_multiplier = 1.0
+var _ball_count_multiplier = 1.0
 
-var velocity: Vector2
-var damaged_bodies: Array = []  # Track bodies damaged this frame
+var _velocity: Vector2
+var _damaged_bodies: Array = []  # Track bodies damaged this frame
 
 func _ready():
 	# Configure RigidBody2D settings for perfect bouncing
@@ -40,47 +44,47 @@ func _ready():
 	body_entered.connect(_on_body_entered)
 	
 	# Set initial velocity
-	velocity = initial_velocity * speed_multiplier * ball_count_multiplier
-	linear_velocity = velocity
+	_velocity = initial_velocity * speed_multiplier * _ball_count_multiplier
+	linear_velocity = _velocity
 
 func _physics_process(_delta):
 	# Clear damaged bodies list for new frame
-	damaged_bodies.clear()
+	_damaged_bodies.clear()
 
 	# Ensure velocity magnitude remains constant
 	var current_speed = linear_velocity.length()
-	var desired_speed = velocity.length()
+	var desired_speed = _velocity.length()
 	
 	# If speed has changed due to physics engine, correct it
 	if current_speed > 0 and abs(current_speed - desired_speed) > 0.1:
 		linear_velocity = linear_velocity.normalized() * desired_speed
-		velocity = linear_velocity
+		_velocity = linear_velocity
 
 func _on_body_entered(body):
 	print("Ball hit " + body.name)
 	if body.has_method("take_damage_from_ball"):
-		if not body in damaged_bodies:
+		if not body in _damaged_bodies:
 			body.take_damage_from_ball()
-			damaged_bodies.append(body)
+			_damaged_bodies.append(body)
 	
 func set_velocity(new_velocity: Vector2):
 	"""Set a new velocity for the ball"""
-	velocity = new_velocity
-	linear_velocity = velocity
+	_velocity = new_velocity
+	linear_velocity = _velocity
 
 func get_speed():
 	"""Get the current speed (magnitude of velocity)"""
-	return velocity.length()
+	return _velocity.length()
 
 func set_speed(new_speed: float):
 	"""Set the speed while maintaining direction"""
 	if linear_velocity.length() > 0:
-		velocity = linear_velocity.normalized() * new_speed
-		linear_velocity = velocity
+		_velocity = linear_velocity.normalized() * new_speed
+		linear_velocity = _velocity
 
 func set_ball_count_multiplier(multiplier: float):
 	"""Set the ball count speed multiplier"""
-	ball_count_multiplier = multiplier
+	_ball_count_multiplier = multiplier
 
 func shoot(angle: float, initial_position: Vector2):
 	"""Launch the ball from a given position at a given angle
@@ -94,11 +98,11 @@ func shoot(angle: float, initial_position: Vector2):
 	
 	# Calculate velocity vector from angle
 	var direction = Vector2(cos(angle), sin(angle))
-	var speed = initial_velocity.length() * speed_multiplier * ball_count_multiplier
+	var speed = initial_velocity.length() * speed_multiplier * _ball_count_multiplier
 	
 	# Set the velocity
-	velocity = direction * speed
-	linear_velocity = velocity
+	_velocity = direction * speed
+	linear_velocity = _velocity
 	
 	# Reset any angular velocity
 	angular_velocity = 0.0
@@ -116,3 +120,21 @@ func _process(delta):
 	if position.y > get_viewport().get_visible_rect().size.y:
 		emit_signal("ball_exited", Vector2(position.x, get_viewport().get_visible_rect().size.y))
 		queue_free()
+
+func destroy():
+	"""Properly destroy the ball - stop movement, disable collision, and delete"""
+	# Stop all movement
+	linear_velocity = Vector2.ZERO
+	angular_velocity = 0.0
+	_velocity = Vector2.ZERO
+	
+	# Disable collision detection
+	collision_layer = 0
+	collision_mask = 0
+	
+	# Disconnect signals to prevent any further interactions
+	if body_entered.is_connected(_on_body_entered):
+		body_entered.disconnect(_on_body_entered)
+	
+	# Remove from scene
+	queue_free()
