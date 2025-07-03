@@ -12,20 +12,25 @@ extends Node
 @onready var _play_again_button = $UI/GameOverOverlay/VBoxContainer/PlayAgainButton
 @onready var _end_turn_button = $UI/EndTurnButton
 
-var _ball_count = 1
+var _ball_count = 1000
 var _current_launch_position = Vector2(640, 700)  # 4x scale
 var _balls_in_play = 0
 var _active_balls = []  # Array to track all balls in current round
 var _shooting = false
 var _stop_shooting = false  # Flag to stop shooting early
 var _turn_start_time = 0.0
+var _double_damage_active = false  # Track if double damage is active this round
 
 func _ready():
+	# Add to game controller group for easy access
+	add_to_group("game_controller")
+	
 	_input_handler.shoot_ball.connect(_on_shoot_ball)
 	_input_handler.reset_launch_position(_current_launch_position)
 	
 	_brick_manager.game_over.connect(_on_game_over)
 	_brick_manager.special_block_hit.connect(_on_special_block_hit)
+	_brick_manager.pickup_spawned.connect(_on_pickup_spawned)
 	
 	_end_turn_button.pressed.connect(_on_end_turn_button_pressed)
 	_play_again_button.pressed.connect(_on_play_again)
@@ -33,6 +38,9 @@ func _ready():
 	
 	# Allow play again button to work when game is paused
 	_play_again_button.process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	# Connect to pickup collection signals
+	_connect_pickup_signals()
 	
 	_update_ui()
 
@@ -54,7 +62,7 @@ func _on_shoot_ball(angle, launch_position):
 	
 	# Calculate speed multiplier based on ball count
 	# Formula: 1.0 + (ball_count - 1) * 0.1 (2% increase per additional ball)
-	var speed_multiplier = 1.0 + (_ball_count - 1) * 0.02
+	var speed_multiplier = min(1.0 + (_ball_count - 1) * 0.02, 5)
 	
 	# Shoot all balls sequentially
 	for i in _ball_count:
@@ -68,7 +76,7 @@ func _on_shoot_ball(angle, launch_position):
 		new_ball.shoot(angle, _current_launch_position)
 		_active_balls.append(new_ball)  # Track ball in array
 		_balls_in_play += 1
-		await get_tree().create_timer(0.15  / speed_multiplier).timeout
+		await get_tree().create_timer(0.15 / speed_multiplier).timeout
 
 func _on_ball_exited(exit_position):
 	_balls_in_play -= 1
@@ -86,10 +94,21 @@ func _on_ball_exited(exit_position):
 func _end_turn():
 	_shooting = false
 	_end_turn_button.visible = false
+	_stop_shooting = true
 	_input_handler.reset_launch_position(_current_launch_position)
+	
+	# Clear double damage effect at end of turn
+	_double_damage_active = false
+	
+	# Clear pickups at the end of each round
+	_brick_manager.clear_pickups()
 	
 	# Descend bricks after all balls finish
 	_brick_manager.descend_bricks()
+	
+	# Reconnect pickup signals for new pickups
+	_connect_pickup_signals()
+	
 	_update_ui()
 
 func _on_special_block_hit(type):
@@ -102,7 +121,10 @@ func _on_special_block_hit(type):
 	print("Balls: ", _ball_count)
 
 func _update_ui():
-	_info_label.text = "Round: %d  Balls: %d" % [_brick_manager.current_round, _ball_count]
+	var status_text = "Round: %d  Balls: %d" % [_brick_manager.current_round, _ball_count]
+	if _double_damage_active:
+		status_text += "  [2× DAMAGE]"
+	_info_label.text = status_text
 
 func _on_game_over():
 	print("Game Over - Bricks reached bottom!")
@@ -143,6 +165,7 @@ func _reset_game():
 	_active_balls.clear()  # Clear ball tracking array
 	_shooting = false
 	_end_turn_button.visible = false
+	_double_damage_active = false
 	
 	# Clear all balls
 	for child in get_children():
@@ -163,3 +186,30 @@ func _reset_game():
 	
 	# Update UI
 	_update_ui()
+
+func _connect_pickup_signals():
+	"""Connect to pickup collection signals from all existing pickups"""
+	for pickup in get_tree().get_nodes_in_group("pickups"):
+		if not pickup.pickup_collected.is_connected(_on_pickup_collected):
+			pickup.pickup_collected.connect(_on_pickup_collected)
+
+func _on_pickup_spawned(pickup):
+	"""Connect to a newly spawned pickup"""
+	pickup.pickup_collected.connect(_on_pickup_collected)
+
+func _on_pickup_collected(pickup_type):
+	"""Handle pickup effects"""
+	print("Pickup collected: ", pickup_type)
+	
+	if pickup_type == "minus":
+		_ball_count = max(1, _ball_count - 1)  # Ensure at least 1 ball
+		print("Ball count reduced to: ", _ball_count)
+	elif pickup_type == "double_damage":
+		_double_damage_active = true
+		print("Double damage activated for this round")
+	
+	_update_ui()
+
+func is_double_damage_active() -> bool:
+	"""Check if double damage is currently active"""
+	return _double_damage_active

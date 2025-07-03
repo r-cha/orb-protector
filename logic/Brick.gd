@@ -31,7 +31,15 @@ func take_damage_from_ball():
 		_take_damage()
 
 func _take_damage():
-	hp -= 1
+	var damage = 1
+	
+	# Check if double damage is active
+	var game_controller = get_tree().get_first_node_in_group("game_controller")
+	if game_controller and game_controller.has_method("is_double_damage_active"):
+		if game_controller.is_double_damage_active():
+			damage = 2
+	
+	hp -= damage
 	if hp <= 0:
 		emit_signal("brick_destroyed", self)
 		queue_free()

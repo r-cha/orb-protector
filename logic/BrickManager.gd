@@ -6,8 +6,10 @@ extends Node2D
 
 signal game_over
 signal special_block_hit(type)
+signal pickup_spawned(pickup)
 
 @onready var _brick_scene = preload("res://brick.tscn")
+@onready var _pickup_scene = preload("res://pickup.tscn")
 
 var _grid_width = 10
 var _grid_height = 12
@@ -16,8 +18,10 @@ var _brick_spacing = Vector2(128, 64)  # 8px gap between bricks
 var _start_position = Vector2(64, 100)
 var current_round = 1  # Keep public for GameController access
 var _bricks = []
+var _pickups = []  # Track pickups for this round
 var _base_spawn_probability = 0.6  # Base 60% chance for brick to spawn
 var _base_special_probability = 0.15
+var _pickup_spawn_chance = 0.02  # 2% chance for pickup to spawn instead of brick
 
 func _ready():
 	_spawn_new_row()
@@ -36,23 +40,41 @@ func _spawn_new_row():
 		if randf() > spawn_probability:
 			new_row.append(null)
 			continue
-			
-		var brick = _brick_scene.instantiate()
-		add_child(brick)
 		
 		var pos = _start_position + Vector2(x * _brick_spacing.x, 0)
-		brick.position = pos
 		
-		# Implement variable brick toughness with higher variance
-		var hp = _get_varied_brick_hp()
-		brick.set_hp(hp)
-		
-		if randf() < _base_special_probability:
-			var special_type = "add" if randf() < 0.9 else "multiply"
-			brick.set_special(special_type)
-		
-		brick.brick_destroyed.connect(_on_brick_destroyed)
-		new_row.append(brick)
+		# Check if we should spawn a pickup instead of a brick
+		if randf() < _pickup_spawn_chance:
+			var pickup = _pickup_scene.instantiate()
+			add_child(pickup)
+			pickup.position = pos
+			
+			# Randomly choose pickup type (50/50 chance)
+			var pickup_type = "minus" if randf() < 0.5 else "double_damage"
+			pickup.set_pickup_type(pickup_type)
+			
+			# Track pickup for this round
+			_pickups.append(pickup)
+			
+			# Signal that a pickup was spawned
+			emit_signal("pickup_spawned", pickup)
+			
+			new_row.append(null)  # Don't put pickup in brick grid
+		else:
+			var brick = _brick_scene.instantiate()
+			add_child(brick)
+			brick.position = pos
+			
+			# Implement variable brick toughness with higher variance
+			var hp = _get_varied_brick_hp()
+			brick.set_hp(hp)
+			
+			if randf() < _base_special_probability:
+				var special_type = "add" if randf() < 0.9 else "multiply"
+				brick.set_special(special_type)
+			
+			brick.brick_destroyed.connect(_on_brick_destroyed)
+			new_row.append(brick)
 	
 	_bricks.insert(0, new_row)
 	current_round += 1
@@ -122,7 +144,20 @@ func clear_all_bricks():
 			if is_instance_valid(brick):
 				brick.queue_free()
 	_bricks.clear()
+	
+	# Clear pickups too
+	for pickup in _pickups:
+		if is_instance_valid(pickup):
+			pickup.queue_free()
+	_pickups.clear()
 
 func spawn_new_row():
 	"""Public wrapper for spawning new rows (used by GameController)"""
 	_spawn_new_row()
+
+func clear_pickups():
+	"""Clear all pickups at the end of a round"""
+	for pickup in _pickups:
+		if is_instance_valid(pickup):
+			pickup.queue_free()
+	_pickups.clear()
