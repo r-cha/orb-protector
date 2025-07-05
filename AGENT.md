@@ -1,9 +1,8 @@
 # Agent Guidelines for Orb Protector Godot Project
 
 ## Build/Test Commands
-- **Run Project**: Open in Godot editor and press F5, or use `godot --path . --main-pack` from command line
-- **Export**: Use Godot editor Project > Export menu
-- **Debug**: Use Godot editor's debugger (F6 for quick debug)
+
+Use the fully qualified path `/Applications/Godot.app/Contents/MacOS/Godot` to run the executable.
 
 ## Architecture & Structure
 - **Main Scene**: orb_protector.tscn (entry point with GameController.gd)

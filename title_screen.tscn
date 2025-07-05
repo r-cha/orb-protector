@@ -1,0 +1,55 @@
+[gd_scene load_steps=5 format=3 uid="uid://cjuv253jq2ryq"]
+
+[ext_resource type="FontFile" uid="uid://blhsc1md547wl" path="res://joystix.otf" id="1_title_font"]
+[ext_resource type="Script" path="res://logic/TitleScreen.gd" id="2_title_script"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_title"]
+font = ExtResource("1_title_font")
+font_size = 64
+
+[sub_resource type="LabelSettings" id="LabelSettings_subtitle"]
+font = ExtResource("1_title_font")
+font_size = 24
+font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="TitleScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_title_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.105882, 0.105882, 0.12549, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "ORB PROTECTOR"
+label_settings = SubResource("LabelSettings_title")
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "TAP/CLICK TO PLAY"
+label_settings = SubResource("LabelSettings_subtitle")
+horizontal_alignment = 1

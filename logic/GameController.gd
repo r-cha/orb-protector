@@ -7,7 +7,8 @@ extends Node
 @onready var _ball_scene = preload("res://ball.tscn")
 @onready var _input_handler = $InputHandler
 @onready var _brick_manager = $BrickManager
-@onready var _info_label = $UI/InfoPanel/InfoLabel
+@onready var _round_display = $UI/RoundDisplay
+@onready var _ball_count_label = $UI/BallCountContainer/BallCountLabel
 @onready var _game_over_overlay = $UI/GameOverOverlay
 @onready var _play_again_button = $UI/GameOverOverlay/VBoxContainer/PlayAgainButton
 @onready var _end_turn_button = $UI/EndTurnButton
@@ -121,10 +122,10 @@ func _on_special_block_hit(type):
 	print("Balls: ", _ball_count)
 
 func _update_ui():
-	var status_text = "Round: %d  Balls: %d" % [_brick_manager.current_round, _ball_count]
-	if _double_damage_active:
-		status_text += "  [2× DAMAGE]"
-	_info_label.text = status_text
+	if _round_display:
+		_round_display.text = str(_brick_manager.current_round)
+	if _ball_count_label:
+		_ball_count_label.text = str(_ball_count)
 
 func _on_game_over():
 	print("Game Over - Bricks reached bottom!")
