@@ -74,6 +74,7 @@ func _on_shoot_ball(angle, launch_position):
 		add_child(new_ball)
 		new_ball.ball_exited.connect(_on_ball_exited)
 		new_ball.set_ball_count_multiplier(speed_multiplier)
+		new_ball.set_double_damage_active(_double_damage_active)
 		new_ball.shoot(angle, _current_launch_position)
 		_active_balls.append(new_ball)  # Track ball in array
 		_balls_in_play += 1
@@ -100,6 +101,7 @@ func _end_turn():
 	
 	# Clear double damage effect at end of turn
 	_double_damage_active = false
+	_update_all_balls_double_damage_state()
 	
 	# Clear pickups at the end of each round
 	_brick_manager.clear_pickups()
@@ -167,6 +169,7 @@ func _reset_game():
 	_shooting = false
 	_end_turn_button.visible = false
 	_double_damage_active = false
+	_update_all_balls_double_damage_state()
 	
 	# Clear all balls
 	for child in get_children():
@@ -207,6 +210,7 @@ func _on_pickup_collected(pickup_type):
 		print("Ball count reduced to: ", _ball_count)
 	elif pickup_type == "double_damage":
 		_double_damage_active = true
+		_update_all_balls_double_damage_state()
 		print("Double damage activated for this round")
 	
 	_update_ui()
@@ -214,3 +218,9 @@ func _on_pickup_collected(pickup_type):
 func is_double_damage_active() -> bool:
 	"""Check if double damage is currently active"""
 	return _double_damage_active
+
+func _update_all_balls_double_damage_state():
+	"""Update the visual state of all active balls based on double damage status"""
+	for ball in _active_balls:
+		if ball and is_instance_valid(ball):
+			ball.set_double_damage_active(_double_damage_active)

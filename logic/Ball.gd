@@ -16,6 +16,7 @@ var _ball_count_multiplier = 1.0
 
 var _velocity: Vector2
 var _damaged_bodies: Array = []  # Track bodies damaged this frame
+var _original_color: Color  # Store original ball color
 
 func _ready():
 	# Configure RigidBody2D settings for perfect bouncing
@@ -46,6 +47,9 @@ func _ready():
 	# Set initial velocity
 	_velocity = initial_velocity * speed_multiplier * _ball_count_multiplier
 	linear_velocity = _velocity
+	
+	# Store original color for potential modifications
+	_original_color = $Sprite2D.modulate
 
 func _physics_process(_delta):
 	# Clear damaged bodies list for new frame
@@ -140,6 +144,13 @@ func _process(delta):
 	if global_position.y > get_viewport().get_visible_rect().size.y:
 		emit_signal("ball_exited", Vector2(global_position.x, get_viewport().get_visible_rect().size.y))
 		queue_free()
+
+func set_double_damage_active(active: bool):
+	"""Change ball color based on double damage state"""
+	if active:
+		$Sprite2D.modulate = Color.RED
+	else:
+		$Sprite2D.modulate = _original_color
 
 func destroy():
 	"""Properly destroy the ball - stop movement, disable collision, and delete"""
