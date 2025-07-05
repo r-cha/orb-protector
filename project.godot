@@ -11,8 +11,7 @@ config_version=5
 [application]
 
 config/name="Orb Protector"
-config/description="A simple Pong game. This demo shows best practices
-for game development in Godot, including signals."
+config/description="You are the protector of the Orbs. You are an Orb. You shoot Orbs. Kill the Bricks."
 config/tags=PackedStringArray("2d")
 run/main_scene="res://orb_protector.tscn"
 config/features=PackedStringArray("4.2")
@@ -62,6 +61,7 @@ right_move_up={
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.105882, 0.105882, 0.12549, 1)
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true

@@ -29,9 +29,9 @@ func _ready():
 	physics_material.friction = 0.0  # No friction
 	physics_material_override = physics_material
 	
-	 # Set collision layers - balls only collide with walls, bricks, not other balls
+	 # Set collision layers - balls only collide with bricks, not other balls
 	collision_layer = 1  # Ball layer
-	collision_mask = 6   # Walls (layer 2) + Bricks (layer 4), NOT balls (layer 1)
+	collision_mask = 4   # Bricks (layer 4), NOT balls (layer 1) or walls
 	
 	# Set collision detection to continuous for better accuracy
 	continuous_cd = CCD_MODE_CAST_RAY
@@ -50,6 +50,25 @@ func _ready():
 func _physics_process(_delta):
 	# Clear damaged bodies list for new frame
 	_damaged_bodies.clear()
+
+	# Check screen bounds and bounce off walls
+	var screen_size = get_viewport().get_visible_rect().size
+	var ball_radius = 24.0  # Ball collision radius
+	
+	# Left wall bounce
+	if global_position.x <= ball_radius and linear_velocity.x < 0:
+		linear_velocity.x = -linear_velocity.x
+		global_position.x = ball_radius
+	
+	# Right wall bounce
+	elif global_position.x >= screen_size.x - ball_radius and linear_velocity.x > 0:
+		linear_velocity.x = -linear_velocity.x
+		global_position.x = screen_size.x - ball_radius
+	
+	# Top wall bounce
+	if global_position.y <= ball_radius and linear_velocity.y < 0:
+		linear_velocity.y = -linear_velocity.y
+		global_position.y = ball_radius
 
 	# Ensure velocity magnitude remains constant
 	var current_speed = linear_velocity.length()
@@ -117,8 +136,9 @@ func shoot_degrees(angle_degrees: float, initial_position: Vector2):
 	shoot(deg_to_rad(angle_degrees), initial_position)
 
 func _process(delta):
-	if position.y > get_viewport().get_visible_rect().size.y:
-		emit_signal("ball_exited", Vector2(position.x, get_viewport().get_visible_rect().size.y))
+	# Check if ball has exited the bottom of the screen
+	if global_position.y > get_viewport().get_visible_rect().size.y:
+		emit_signal("ball_exited", Vector2(global_position.x, get_viewport().get_visible_rect().size.y))
 		queue_free()
 
 func destroy():

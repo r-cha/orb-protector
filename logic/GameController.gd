@@ -12,7 +12,7 @@ extends Node
 @onready var _play_again_button = $UI/GameOverOverlay/VBoxContainer/PlayAgainButton
 @onready var _end_turn_button = $UI/EndTurnButton
 
-var _ball_count = 1000
+var _ball_count = 1
 var _current_launch_position = Vector2(640, 700)  # 4x scale
 var _balls_in_play = 0
 var _active_balls = []  # Array to track all balls in current round
